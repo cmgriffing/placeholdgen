@@ -25,7 +25,9 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1.0.2",
-    "smelte": "^1.1.8",
+    "nanoid": "^4.0.0",
+    "papercss": "^1.8.3",
+    "spaper": "^0.8.6",
     "svelte-spa-router": "^3.2.0"
   }
 }

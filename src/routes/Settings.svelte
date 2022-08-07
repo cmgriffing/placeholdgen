@@ -1,5 +1,4 @@
 <script lang="ts">
-
 </script>
 
-<h2>Settings</h2>
+<h2 class="page-title">Settings</h2>

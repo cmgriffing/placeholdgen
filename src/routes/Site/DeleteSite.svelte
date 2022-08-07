@@ -1,5 +1,4 @@
 <script lang="ts">
-
 </script>
 
-<h2>Delete Site</h2>
+<h2 class="page-title">Delete Site</h2>
