@@ -1,3 +1,3 @@
-pub mod collections;
+pub mod app_state;
 pub mod db;
 pub mod settings;

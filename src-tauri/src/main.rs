@@ -6,15 +6,23 @@
 mod commands;
 mod types;
 
-use commands::collections::{get_collections, save_collections};
+use std::sync::Mutex;
 
+use commands::app_state::{get_app_state, save_app_state};
+use commands::db::get_database;
 use commands::settings::{get_settings, save_settings};
 
+use tauri_plugin_log::{LogTarget, LoggerBuilder};
+
 fn main() {
+    let db = Mutex::new(get_database());
+
     tauri::Builder::default()
+        .plugin(LoggerBuilder::new().targets([LogTarget::Stdout]).build())
+        .manage(db)
         .invoke_handler(tauri::generate_handler![
-            get_collections,
-            save_collections,
+            get_app_state,
+            save_app_state,
             get_settings,
             save_settings
         ])

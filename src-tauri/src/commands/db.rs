@@ -5,14 +5,20 @@ use pickledb::{PickleDb, PickleDbDumpPolicy, SerializationMethod};
 pub fn get_database() -> PickleDb {
     match PickleDb::load(
         "example.db",
-        PickleDbDumpPolicy::DumpUponRequest,
+        PickleDbDumpPolicy::AutoDump,
         SerializationMethod::Json,
     ) {
-        Ok(loaded_db) => loaded_db,
-        _ => PickleDb::new(
-            "example.db",
-            PickleDbDumpPolicy::AutoDump,
-            SerializationMethod::Json,
-        ),
+        Ok(loaded_db) => {
+            println!("loaded DB");
+            loaded_db
+        }
+        _ => {
+            println!("creating new DB");
+            PickleDb::new(
+                "example.db",
+                PickleDbDumpPolicy::AutoDump,
+                SerializationMethod::Json,
+            )
+        }
     }
 }
