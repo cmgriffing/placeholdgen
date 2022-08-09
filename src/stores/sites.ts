@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { Site } from "../types";
+import type { Site } from "../types/Site";
 
 function createSites() {
   const { subscribe, set, update } = writable<Site[]>([]);
@@ -9,12 +9,9 @@ function createSites() {
     push: (site: Site) =>
       update((sites) => {
         sites.push(site);
-
-        // sync to file system?
-
         return sites;
       }),
-    reset: () => set([]),
+    reset: (sites: Site[] = []) => set([...sites]),
   };
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Collection } from "../../types";
+  import type { Collection } from "../../types/Collection";
   import { Collapsible } from "spaper";
   import { nanoid } from "nanoid";
 
@@ -11,7 +11,7 @@
     {
       name: "FOOOOOOOO",
       images: [],
-      collectionId: nanoid(),
+      collection_id: nanoid(),
     },
   ];
 
@@ -20,7 +20,7 @@
 
 <div class="collections hide-checkboxes">
   {#each collections as collection}
-    <Collapsible open={openedCollections[collection.collectionId]}>
+    <Collapsible open={openedCollections[collection.collection_id]}>
       Content
       <div slot="trigger">Testing</div>
     </Collapsible>

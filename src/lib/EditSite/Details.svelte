@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Form, Input, Button, Checkbox, Switch, Card } from "spaper";
-  import type { Site } from "../../types";
+  import type { Site } from "../../types/Site";
 
   export let site: Site;
 </script>

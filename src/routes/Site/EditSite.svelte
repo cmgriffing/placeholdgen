@@ -1,7 +1,8 @@
 <script lang="ts">
   import { Tabs, Tab } from "spaper";
-  import type { Site } from "../../types";
+  import type { Site } from "../../types/Site";
   import { sites } from "../../stores/sites";
+  import { invoke } from "@tauri-apps/api/tauri";
 
   import EditSiteDetails from "../../lib/EditSite/Details.svelte";
   import EditSiteImages from "../../lib/EditSite/Images.svelte";

@@ -12,6 +12,11 @@
   import CreateSite from "./routes/Site/CreateSite.svelte";
   import DeleteSite from "./routes/Site/DeleteSite.svelte";
   import EditSite from "./routes/Site/EditSite.svelte";
+  import { onMount } from "svelte";
+
+  import { invoke } from "@tauri-apps/api/tauri";
+  import { Commands } from "./app-types";
+  import type { AppState } from "./types/AppState";
 
   const routes = {
     "/": Dashboard,
@@ -22,6 +27,13 @@
     "/sites/:siteId/delete": DeleteSite,
     "*": NotFound,
   };
+
+  onMount(async () => {
+    const appState: AppState = await invoke(Commands.GetAppState);
+    console.log({ appState });
+
+    sites.reset(appState.sites);
+  });
 </script>
 
 <main class="main">

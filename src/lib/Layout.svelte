@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Alert, Button } from "spaper";
-  import type { Site } from "../types";
+  import type { Site } from "../types/Site";
   export let sites: Site[] = [];
 </script>
 
