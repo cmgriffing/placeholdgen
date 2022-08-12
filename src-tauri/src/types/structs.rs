@@ -12,14 +12,14 @@ pub struct AppState {
 pub struct Collection {
     pub collection_id: String,
     pub name: String,
-    images: Vec<SiteImage>,
+    pub images: Vec<SiteImage>,
 }
 
 #[derive(Serialize, Deserialize, TS, Clone, Default, Debug)]
 #[ts(export)]
 pub struct Site {
     pub name: String,
-    pub id: String,
+    pub site_id: String,
     pub collections: Vec<Collection>,
 }
 

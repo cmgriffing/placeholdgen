@@ -12,11 +12,12 @@
   import CreateSite from "./routes/Site/CreateSite.svelte";
   import DeleteSite from "./routes/Site/DeleteSite.svelte";
   import EditSite from "./routes/Site/EditSite.svelte";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
 
   import { invoke } from "@tauri-apps/api/tauri";
   import { Commands } from "./app-types";
   import type { AppState } from "./types/AppState";
+  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
   const routes = {
     "/": Dashboard,
@@ -28,11 +29,24 @@
     "*": NotFound,
   };
 
+  let unlisten: UnlistenFn;
+
   onMount(async () => {
     const appState: AppState = await invoke(Commands.GetAppState);
     console.log({ appState });
 
     sites.reset(appState.sites);
+
+    // unlisten = await listen<string>("app_state_update", (event) => {
+    //   console.log("Payload Type: ", typeof event.payload);
+    //   console.log("Payload: ", event.payload);
+    // });
+  });
+
+  onDestroy(() => {
+    if (unlisten) {
+      unlisten();
+    }
   });
 </script>
 

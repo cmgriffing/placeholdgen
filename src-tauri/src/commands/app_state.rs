@@ -12,13 +12,18 @@ pub fn save_app_state(app_state: AppState, db: tauri::State<'_, Mutex<PickleDb>>
 
     new_db.set(DB_KEY_APP_STATE, &app_state).unwrap();
 
-    match new_db.get::<AppState>(DB_KEY_APP_STATE) {
-        Some(new_app_state) => new_app_state,
-        None => {
-            println!("Error: None found when fetching");
-            app_state
-        }
-    }
+    // match new_db.get::<AppState>(DB_KEY_APP_STATE) {
+    //     Some(new_app_state) => {
+    //         println!("NEW_APP_STATE: {:?}", new_app_state);
+    //         new_app_state
+    //     }
+    //     None => {
+    //         println!("Error: None found when fetching");
+    //         app_state
+    //     }
+    // }
+
+    app_state
 }
 
 #[tauri::command]

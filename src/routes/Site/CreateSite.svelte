@@ -14,7 +14,7 @@
 
   async function createSite() {
     sites.push({
-      id: nanoid(),
+      site_id: nanoid(),
       name: siteName,
       collections: [],
     });
@@ -22,6 +22,8 @@
     const appState: AppState = {
       sites: get(sites),
     };
+
+    console.log({ appState });
 
     const result = await invoke(Commands.SaveAppState, { appState });
 
@@ -38,24 +40,6 @@
     siteName = event.detail;
   }}
 />
-
-<Button
-  nativeType="button"
-  type="secondary"
-  on:click={async () => {
-    const result = await dialog.open({
-      directory: true,
-      title: "Select local folder for Site assets",
-      multiple: false,
-    });
-
-    if (typeof result === "string") {
-      localPath = result;
-    }
-  }}
->
-  Select local path
-</Button>
 
 <div class="row flex-right">
   <Button type="success" on:click={createSite}>Continue -></Button>

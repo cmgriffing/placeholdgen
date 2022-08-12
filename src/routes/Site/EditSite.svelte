@@ -44,10 +44,10 @@
     <EditSiteDetails {site} />
   </Tab>
   <Tab label="Images">
-    <EditSiteImages />
+    <EditSiteImages {site} />
   </Tab>
   <Tab label="Export">
-    <EditSiteExport />
+    <EditSiteExport {site} />
   </Tab>
 </Tabs>
 
