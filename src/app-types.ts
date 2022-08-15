@@ -1,7 +1,5 @@
 export enum Commands {
-  GetAppState = "get_app_state",
-  SaveAppState = "save_app_state",
-  GetSettings = "get_settings",
-  SaveSettings = "save_settings",
   AddLocalImage = "add_local_image",
+  AddRemoteImage = "add_remote_image",
+  GetAllImages = "get_all_images",
 }

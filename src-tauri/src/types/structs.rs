@@ -11,25 +11,27 @@ pub struct AppState {
 #[ts(export)]
 pub struct Collection {
     pub collection_id: String,
-    pub name: String,
-    pub images: Vec<SiteImage>,
+    pub collection_name: String,
+    pub collection_key: String,
+    pub site_id: String,
 }
 
 #[derive(Serialize, Deserialize, TS, Clone, Default, Debug)]
 #[ts(export)]
 pub struct Site {
-    pub name: String,
+    pub site_name: String,
     pub site_id: String,
-    pub collections: Vec<Collection>,
 }
 
 #[derive(Serialize, Deserialize, TS, Clone, Default, Debug)]
 #[ts(export)]
 pub struct SiteImage {
-    pub id: String,
+    pub image_id: String,
     pub uploaded: bool,
     pub original_file_name: String,
     pub source_url: String,
+    pub image_type: String,
+    pub collection_id: String,
 }
 
 #[derive(Serialize, Deserialize, TS, Clone, Default, Debug)]

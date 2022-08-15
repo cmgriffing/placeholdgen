@@ -1,33 +1,48 @@
 <script lang="ts">
   import { Form, Input, Button } from "spaper";
   import { get } from "svelte/store";
-  import { dialog } from "@tauri-apps/api";
   import { sites } from "../../stores/sites";
+  import { db } from "../../stores/db";
   import { nanoid } from "nanoid";
-  import { invoke } from "@tauri-apps/api/tauri";
-  import type { Site } from "../../types/Site";
-  import { Commands } from "../../app-types";
-  import type { AppState } from "../../types/AppState";
+  import { SitesService } from "../../services/data/sites";
+  import { CollectionsService } from "../../services/data/collections";
+  import { awaitableTimeout } from "../../utils/awaitable-timeout";
+  import { push as routerPush } from "svelte-spa-router";
 
   let siteName: string;
-  let localPath: string;
 
   async function createSite() {
-    sites.push({
-      site_id: nanoid(),
-      name: siteName,
-      collections: [],
-    });
+    const database = get(db);
 
-    const appState: AppState = {
-      sites: get(sites),
+    const siteService = new SitesService(database);
+    const collectionService = new CollectionsService(database);
+
+    await siteService.initialized;
+
+    const newSite = {
+      site_id: nanoid(),
+      site_name: siteName,
     };
 
-    console.log({ appState });
+    console.log("before create: ", newSite);
 
-    const result = await invoke(Commands.SaveAppState, { appState });
+    const createResult = await siteService.createSite(newSite);
 
-    console.log({ result });
+    const collectionResult = await collectionService.createCollection(
+      newSite.site_id,
+      {
+        collection_id: nanoid(),
+        site_id: newSite.site_id,
+        collection_name: "Default",
+        collection_key: "",
+      }
+    );
+
+    sites.push(newSite);
+
+    console.log("sites after create: ", await siteService.getSites());
+
+    routerPush(`#/sites/${newSite.site_id}/edit`);
   }
 </script>
 

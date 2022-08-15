@@ -1,6 +1,7 @@
 <script lang="ts">
   import "papercss/dist/paper.min.css";
   import { sites } from "./stores/sites";
+  import { db } from "./stores/db";
 
   import Router from "svelte-spa-router";
 
@@ -13,11 +14,14 @@
   import DeleteSite from "./routes/Site/DeleteSite.svelte";
   import EditSite from "./routes/Site/EditSite.svelte";
   import { onDestroy, onMount } from "svelte";
-
+  import Database from "tauri-plugin-sqlite-api";
+  import { SitesService } from "./services/data/sites";
+  import { awaitableTimeout } from "./utils/awaitable-timeout";
+  // import Knex from "knex";
   import { invoke } from "@tauri-apps/api/tauri";
   import { Commands } from "./app-types";
-  import type { AppState } from "./types/AppState";
-  import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+
+  // const knex = Knex({ client: "sqlite" });
 
   const routes = {
     "/": Dashboard,
@@ -29,24 +33,29 @@
     "*": NotFound,
   };
 
-  let unlisten: UnlistenFn;
-
   onMount(async () => {
-    const appState: AppState = await invoke(Commands.GetAppState);
-    console.log({ appState });
+    // sqlite. The path is relative to `tauri::api::path::BaseDirectory::App`.
+    const database = await Database.open("./main.db");
 
-    sites.reset(appState.sites);
+    // store db to svelte store
+    db.setDatabase(database);
 
-    // unlisten = await listen<string>("app_state_update", (event) => {
-    //   console.log("Payload Type: ", typeof event.payload);
-    //   console.log("Payload: ", event.payload);
-    // });
-  });
-
-  onDestroy(() => {
-    if (unlisten) {
-      unlisten();
+    // dev only
+    if (false) {
+      console.warn("DEV: DROPPING TABLES");
+      const sitesService = new SitesService(database);
+      await awaitableTimeout(100);
+      await sitesService.dropTables();
     }
+
+    const sitesService = new SitesService(database);
+    await awaitableTimeout(100);
+
+    const fetchedSites = await sitesService.getSites();
+
+    sites.reset(fetchedSites);
+
+    const all_images = await invoke(Commands.GetAllImages);
   });
 </script>
 

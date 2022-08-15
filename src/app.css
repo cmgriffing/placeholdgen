@@ -96,6 +96,10 @@ button:focus-visible {
   padding: 0;
 }
 
+.modal-no-footer.modal-body footer {
+  display: none;
+}
+
 /*
 	Improved screen reader only CSS class
 	@author Gaël Poupard

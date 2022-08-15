@@ -24,7 +24,7 @@
       <ul>
         {#each sites as site}
           <li>
-            <a href={`#/sites/${site.id}/edit`}>{site.name}</a>
+            <a href={`#/sites/${site.site_id}/edit`}>{site.site_name}</a>
           </li>
         {/each}
       </ul>

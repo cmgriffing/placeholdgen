@@ -1,14 +1,10 @@
 use glob::glob;
-use pickledb::PickleDb;
-use std::fs::{self, create_dir};
 use std::path::Path;
-use std::sync::Mutex;
-use tauri::Manager;
+use std::{ffi::OsStr, fs::create_dir_all};
 
-use image_convert::{to_png, ImageResource, PNGConfig};
+use image_convert::{to_png, ImageResource, MagickError, PNGConfig};
 
-use crate::types::structs::{Collection, SiteImage};
-use crate::types::{constants::DB_KEY_APP_STATE, structs::AppState};
+use crate::types::structs::SiteImage;
 
 #[tauri::command]
 pub fn add_local_image(
@@ -17,12 +13,7 @@ pub fn add_local_image(
     site_id: String,
     collection_id: String,
     image_id: String,
-    db: tauri::State<'_, Mutex<PickleDb>>,
-) -> AppState {
-    let mut new_db = db.lock().unwrap();
-
-    let mut app_state = new_db.get::<AppState>(DB_KEY_APP_STATE).unwrap();
-
+) {
     let local_image_path_path = Path::new(&local_image_path);
 
     // guard local_image_path existing
@@ -30,123 +21,12 @@ pub fn add_local_image(
 
     if !local_image_exists {
         println!("local image does not exist: {local_image_path}");
-        return app_state;
+        return;
     }
-
-    println!("SITE_ID: {}", site_id);
-
-    let mut site = app_state
-        .sites
-        .iter()
-        .find(|inner_site| inner_site.site_id == site_id)
-        .unwrap()
-        .clone();
-
-    let mut collections = site.collections.clone();
-
-    let collection_maybe = site.collections.iter().find(|collection| {
-        println!("collection.collection_id, {}", collection.collection_id);
-        collection.collection_id == collection_id
-    });
-
-    let collection = match collection_maybe.is_none() {
-        true => {
-            println!("app_state after creating collection, {:?}", app_state);
-            let new_collection = Collection {
-                collection_id: collection_id.clone(),
-                name: "New Collection".to_string(),
-                images: vec![],
-            };
-
-            collections.push(new_collection.clone());
-
-            new_collection
-        }
-        false => collection_maybe.unwrap().clone(),
-    };
-
-    collections.push(collection.clone());
-
-    collections = collections
-        .iter()
-        .map(|inner_collection| {
-            let cloned_collection = collection.clone();
-            let cloned_inner_collection = inner_collection.clone();
-            match cloned_collection.collection_id == cloned_inner_collection.collection_id {
-                true => cloned_collection,
-                false => cloned_inner_collection,
-            }
-        })
-        .collect();
-
-    site.collections = collections;
-
-    let mut sites = app_state.sites.clone();
-
-    sites = sites
-        .iter()
-        .map(|inner_site| {
-            let cloned_site = site.clone();
-            let cloned_inner_site = inner_site.clone();
-            match cloned_site.site_id == cloned_inner_site.site_id {
-                true => cloned_site,
-                false => cloned_inner_site,
-            }
-        })
-        .collect();
-
-    app_state.sites = sites;
-
-    let set_result = new_db
-        .set::<AppState>(DB_KEY_APP_STATE, &app_state)
-        .unwrap();
-
-    // let image_result = File::open(local_image_path).unwrap();
-
-    let copy_directory_path_string = format!(
-        "{}/collections/{}",
-        app_handle
-            .path_resolver()
-            .resource_dir()
-            .unwrap()
-            .as_os_str()
-            .to_str()
-            .unwrap(),
-        collection_id.clone()
-    );
-
-    let copy_directory_path = Path::new(&copy_directory_path_string);
-
-    if !copy_directory_path.exists() {
-        let create_result = create_dir(copy_directory_path);
-        if create_result.is_err() {
-            println!("SOMETHING HAS GONE TERRIBLY WRONG");
-        }
-    }
-
-    println!(
-        "copy_directory_path: {}",
-        copy_directory_path.as_os_str().to_str().unwrap()
-    );
-
-    let copy_image_path_string = format!(
-        "{}/{image_id}.png",
-        copy_directory_path.as_os_str().to_str().unwrap()
-    );
-
-    let copy_image_path = Path::new(&copy_directory_path_string);
-
-    println!("copy_image_path: {copy_image_path_string}");
-
-    let mut config = PNGConfig::new();
-
-    config.width = 3840;
 
     let input = ImageResource::from_path(local_image_path_path);
 
-    let mut output = ImageResource::from_path(copy_image_path);
-
-    let convert_result = to_png(&mut output, &input, &config);
+    let convert_result = convert_image(app_handle, collection_id, image_id, input);
 
     println!(
         "convert_result: is_err:{} is_ok:{}",
@@ -154,26 +34,148 @@ pub fn add_local_image(
         convert_result.is_ok()
     );
 
-    let new_app_state = new_db.get::<AppState>(DB_KEY_APP_STATE).unwrap();
-
-    app_handle
-        .emit_all("app_state_update", new_app_state.clone())
-        .unwrap();
-
-    new_app_state
+    if convert_result.is_err() {
+        println!("Error: {}", convert_result.unwrap_err());
+    }
 }
 
 #[tauri::command]
-pub fn get_all_images(app_handle: tauri::AppHandle) -> Vec<SiteImage> {
-    let resource_dir = app_handle.path_resolver().resource_dir();
+pub fn get_all_images(app_handle: tauri::AppHandle) -> Vec<String> {
+    let resource_dir = app_handle.path_resolver().resource_dir().unwrap();
 
-    // LEAVING OFF: JUST PASTED
-    for entry in glob("/media/**/*.jpg").expect("Failed to read glob pattern") {
-        match entry {
-            Ok(path) => println!("{:?}", path.display()),
-            Err(e) => println!("{:?}", e),
+    let resource_dir_string = resource_dir.as_os_str().to_str().unwrap();
+
+    let images = glob(&format!("{resource_dir_string}/**/*.{{png,gif}}")).unwrap();
+
+    return images
+        .map(|image_path| image_path.unwrap().to_string_lossy().to_string())
+        .collect();
+}
+
+#[tauri::command]
+pub fn add_remote_image(app_handle: tauri::AppHandle, remote_image: SiteImage) -> bool {
+    let image_fetch_result = ureq::get(&remote_image.source_url).call();
+
+    match image_fetch_result {
+        Ok(result) => {
+            let image_resource = ImageResource::from_reader(result.into_reader());
+
+            if image_resource.is_err() {
+                return false;
+            }
+
+            let convert_result = convert_image(
+                app_handle,
+                remote_image.collection_id,
+                remote_image.image_id,
+                image_resource.unwrap(),
+            );
+
+            println!(
+                "convert_result: is_err:{} is_ok:{}",
+                convert_result.is_err(),
+                convert_result.is_ok()
+            );
+
+            if convert_result.is_err() {
+                println!("Error: {}", convert_result.unwrap_err());
+            }
+
+            true
+        }
+        Err(error) => {
+            println!("Error fetching image: {:?}", error);
+            false
+        }
+    }
+}
+
+#[tauri::command]
+pub fn search_images(app_handle: tauri::AppHandle, search_query: String) -> bool {
+    let path = format!(
+        "https://api.imgur.com/3/gallery/search/top/?q={}'",
+        search_query
+    );
+    let image_fetch_result = ureq::get(&path)
+        .set("Authorization", &format!("Client-ID {}", "572f73f3aca31fb"))
+        .call();
+
+    match image_fetch_result {
+        Ok(result) => {
+            let image_resource = ImageResource::from_reader(result.into_reader());
+
+            if image_resource.is_err() {
+                return false;
+            }
+
+            let convert_result = convert_image(
+                app_handle,
+                remote_image.collection_id,
+                remote_image.image_id,
+                image_resource.unwrap(),
+            );
+
+            println!(
+                "convert_result: is_err:{} is_ok:{}",
+                convert_result.is_err(),
+                convert_result.is_ok()
+            );
+
+            if convert_result.is_err() {
+                println!("Error: {}", convert_result.unwrap_err());
+            }
+
+            true
+        }
+        Err(error) => {
+            println!("Error fetching image: {:?}", error);
+            false
+        }
+    }
+}
+
+fn convert_image(
+    app_handle: tauri::AppHandle,
+    collection_id: String,
+    image_id: String,
+    input: ImageResource,
+) -> Result<(), MagickError> {
+    let copy_directory_path_string = format!(
+        "{}/collections/{}",
+        app_handle
+            .path_resolver()
+            .resource_dir()
+            .ok_or("Error getting resource_dir")?
+            .as_os_str()
+            .to_str()
+            .ok_or("Error converting resource_dir to str")?,
+        collection_id.clone()
+    );
+
+    let copy_directory_path = Path::new(&copy_directory_path_string);
+
+    if !copy_directory_path.exists() {
+        let create_result = create_dir_all(copy_directory_path);
+        if create_result.is_err() {
+            println!("SOMETHING HAS GONE TERRIBLY WRONG");
         }
     }
 
-    return vec![];
+    let copy_image_path_string = format!(
+        "{}/{image_id}.png",
+        copy_directory_path
+            .as_os_str()
+            .to_str()
+            .ok_or("Error converting copy_directory_path to str")?
+    );
+
+    let copy_image_path = Path::new(&copy_image_path_string);
+
+    let mut config = PNGConfig::new();
+
+    config.width = 3840;
+
+    let mut output = ImageResource::from_path(copy_image_path.clone());
+
+    to_png(&mut output, &input, &config)
 }

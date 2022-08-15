@@ -6,10 +6,10 @@
 <h2 class="page-title">Dashboard</h2>
 
 {#each $sites as site}
-  <Card title={site.name} image="https://www.fillmurray.com/400/200">
+  <Card title={site.site_name} image="https://www.fillmurray.com/400/200">
     Card Content
     <p slot="bottom">
-      <Button isLink href={`#/sites/${site.id}/edit`}>Edit</Button>
+      <Button isLink href={`#/sites/${site.site_id}/edit`}>Edit</Button>
       <Button>Export</Button>
     </p>
   </Card>
